@@ -3,74 +3,76 @@ const { Server } = require("socket.io");
 const { connect, StringCodec } = require("nats");
 
 const sc = StringCodec();
-const devices = new Map();
+const uredaji = new Map();
 
 const server = http.createServer();
 const io = new Server(server, {
     cors: { origin: "http://localhost:3000" }
 });
 
+async function handlerKomandi(cmdSub, io) {
+    for await (const poruka of cmdSub) {
+        const { deviceId } = JSON.parse(sc.decode(poruka.data));
+        console.log("Saljem naredbu uredaju ", deviceId);
+        io.to(deviceId).emit("send-data-now");
+    }
+}
+
+async function handlerListeUredaja(listSub, io) {
+    for await (const poruka of listSub) {
+        poruka.respond(sc.encode(JSON.stringify({uredaji: Array.from(uredaji.keys())})));
+    }
+}
+
 async function start() {
     const nc = await connect({ servers: "nats://localhost:4222" });
-    console.log("Device Gateway connected to NATS");
+    console.log("Device Gateway spojen na NATS");
 
     const cmdSub = nc.subscribe("devices.commands.>");
-    (async () => {
-        for await (const msg of cmdSub) {
-            const { deviceId } = JSON.parse(sc.decode(msg.data));
-            console.log("Forwarding command to device:", deviceId);
-            io.to(deviceId).emit("send-data-now");
-        }
-    })();
+
+    handlerKomandi(cmdSub, io);
+
 
     const listSub = nc.subscribe("devices.list");
-    (async () => {
-        for await (const msg of listSub) {
-            msg.respond(sc.encode(JSON.stringify({
-                devices: Array.from(devices.keys())
-            })));
-        }
-    })();
+
+    handlerListeUredaja(listSub, io);
 
     io.on("connection", (socket) => {
-        console.log("Device connected:", socket.id);
+        console.log("Uredaj spojen:", socket.id);
 
         socket.on("register", (deviceId) => {
             socket.deviceId = String(deviceId);
             socket.join(socket.deviceId);
-            devices.set(socket.deviceId, socket.id);
-            console.log("Device registered:", socket.deviceId);
+            uredaji.set(socket.deviceId, socket.id);
+            console.log("Uredaj registriran", socket.deviceId);
 
             nc.publish("devices.status", sc.encode(JSON.stringify({
                 event: "connected",
-                devices: Array.from(devices.keys())
+                uredaji: Array.from(uredaji.keys())
             })));
         });
 
         socket.on("device-data", (data) => {
-            console.log("Received data from device:", data);
-            nc.publish(`devices.data.${data.id}`, sc.encode(JSON.stringify(data)));
+            console.log("Podaci primljeni s uredaja", data);
+            nc.publish(`devices.data.${data.uredjaj_id}`, sc.encode(JSON.stringify(data)));
         });
 
         socket.on("disconnect", () => {
             if (socket.deviceId) {
-                devices.delete(socket.deviceId);
-                console.log("Device disconnected:", socket.deviceId);
+                uredaji.delete(socket.deviceId);
+                console.log("Uredaj odspojen", socket.deviceId);
 
                 nc.publish("devices.status", sc.encode(JSON.stringify({
                     event: "disconnected",
-                    devices: Array.from(devices.keys())
+                    uredaji: Array.from(uredaji.keys())
                 })));
             }
         });
     });
 
     server.listen(3001, () => {
-        console.log("Device Gateway running on port 3001");
+        console.log("Device Gateway pokrenut na portu 3001");
     });
 }
 
-start().catch(err => {
-    console.error("Device Gateway failed to start:", err);
-    process.exit(1);
-});
+start();

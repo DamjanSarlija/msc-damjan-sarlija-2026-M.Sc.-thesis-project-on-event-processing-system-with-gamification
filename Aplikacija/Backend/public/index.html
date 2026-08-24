@@ -2,89 +2,11 @@
 <html>
 <head>
     <title></title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: sans-serif;
-            background: #f4f4f4;
-            color: #333;
-            padding: 32px;
-        }
-
-        h1 {
-            font-size: 1.4rem;
-            font-weight: 600;
-            margin-bottom: 24px;
-            color: #111;
-        }
-
-        h2 {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #444;
-        }
-
-        .section {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 20px;
-            margin-bottom: 24px;
-        }
-
-        #device-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        button {
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 8px 16px;
-            font-size: 0.9rem;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #1d4ed8;
-        }
-
-        #data-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        #data-list li {
-            background: #f9f9f9;
-            border: 1px solid #e5e5e5;
-            border-radius: 4px;
-            padding: 10px 14px;
-            font-size: 0.9rem;
-            color: #333;
-        }
-
-        .no-data {
-            color: #999;
-            font-size: 0.9rem;
-        }
-    </style>
+    <link rel = "stylesheet" href = "/styles/home.css">
 </head>
 <body>
     <h1>Uređaji - podaci</h1>
-
+    <button onclick = "obrisiSvePodatke()">Obriši sve podatke</button>
     <div class="section">
         <h2>Uređaji</h2>
         <div id="device-buttons">
@@ -100,65 +22,6 @@
     </div>
 
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <script>
-        const socket = io();
-
-        function requestDevice(id) {
-            socket.emit("request-data", String(id));
-        }
-
-        socket.on("devices-update", (devices) => {
-            const container = document.getElementById('device-buttons');
-            container.innerHTML = '';
-
-            if (devices.length === 0) {
-                container.innerHTML = '<span class="no-data">Nema uređaja</span>';
-                return;
-            }
-
-            devices.forEach(id => {
-                const btn = document.createElement('button');
-                btn.textContent = `Zatraži podatke od uređaja ${id}`;
-                btn.onclick = () => requestDevice(id);
-                container.appendChild(btn);
-            });
-        });
-
-        socket.on("new-data", (item) => {
-            const list = document.getElementById('data-list');
-
-            
-            const placeholder = list.querySelector('.no-data');
-            if (placeholder) placeholder.remove();
-
-            const li = document.createElement('li');
-            const time = new Date().toLocaleTimeString();
-            li.textContent = `Uređaj ${item.id}: ${item.podaci} — ${time}`;
-            list.prepend(li);
-        });
-
-        
-        async function fetchData() {
-            try {
-                const res = await fetch('http://localhost:3002/api/data');
-                const data = await res.json();
-                if (data.length === 0) return;
-
-                const list = document.getElementById('data-list');
-                list.innerHTML = '';
-
-                data.slice().reverse().forEach(item => {
-                    const li = document.createElement('li');
-                    const time = new Date(item.vrijeme).toLocaleTimeString();
-                    li.textContent = `Uređaj ${item.id}: ${item.podaci} — ${time}`;
-                    list.appendChild(li);
-                });
-            } catch (err) {
-                console.error("Could not load historical data:", err);
-            }
-        }
-
-        fetchData();
-    </script>
+    <script src = "/scripts/script.js" defer></script>
 </body>
 </html>

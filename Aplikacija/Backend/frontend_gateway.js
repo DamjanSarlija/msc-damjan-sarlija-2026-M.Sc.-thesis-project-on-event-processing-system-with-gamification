@@ -3,6 +3,17 @@ const http = require("http");
 const path = require("path");
 const { Server } = require("socket.io");
 const { connect, StringCodec } = require("nats");
+const pg = require("pg");
+const de = require("dotenv");
+de.config();
+
+const pool = new pg.Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
+
 
 const sc = StringCodec();
 
@@ -14,52 +25,75 @@ app.use(express.static(path.join(__dirname, "public")));
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
+app.get("/podaci", async (req, res) => {
+    const result = await pool.query("SELECT * FROM podaci ORDER BY vrijeme");
+    console.log((await result).rowCount);
+    res.json(result.rows);
+})
+
+app.delete("/podaci", async (req,res) => {
+    const result = await pool.query("DELETE FROM podaci");
+    res.json({success: true});
+})
+
 app.use((req, res) => {
     res.status(404).json({ status: "Not Found", message: "Endpoint ne postoji" });
 });
 
+async function handlerPodataka(dataSub, io) {
+    for await (const poruka of dataSub) {
+        const podaci = JSON.parse(sc.decode(poruka.data));
+        console.log("Saljem podatke na frontend: ", podaci);
+        io.emit("new-data", podaci);
+    }
+}
+
+async function handlerStatusa(statusSub, io) {
+    for await (const poruka of statusSub) {
+        const { uredaji } = JSON.parse(sc.decode(poruka.data));
+        console.log("Azuriranje uredaja: ", uredaji);
+        io.emit("devices-update", uredaji);
+    }
+}
+
+async function handlerPodatakaIzBaze(databaseSub, io) {
+    for await (const poruka of databaseSub) {
+        const podaci = JSON.parse(sc.decode(poruka.data));
+        console.log("Saljem podatke iz baze na frontend: ", podaci);
+        io.emit("database_data", podaci);
+    }
+}
+
 async function start() {
     const nc = await connect({ servers: "nats://localhost:4222" });
-    console.log("Frontend Gateway connected to NATS");
+    console.log("Frontend Gateway spojen na NATS");
 
-    
     const dataSub = nc.subscribe("devices.data.>");
-    (async () => {
-        for await (const msg of dataSub) {
-            const data = JSON.parse(sc.decode(msg.data));
-            console.log("Pushing data to frontend:", data);
-            io.emit("new-data", data);
-        }
-    })();
+    handlerPodataka(dataSub, io);
 
-    
     const statusSub = nc.subscribe("devices.status");
-    (async () => {
-        for await (const msg of statusSub) {
-            const { devices } = JSON.parse(sc.decode(msg.data));
-            console.log("Devices update:", devices);
-            io.emit("devices-update", devices);
-        }
-    })();
+    handlerStatusa(statusSub, io);
+
+    const databaseSub = nc.subscribe("database.data");
+    handlerPodatakaIzBaze(databaseSub, io);
 
     io.on("connection", async (socket) => {
-        console.log("Browser connected:", socket.id);
+        console.log("Frontend povezan:", socket.id);
 
-        
         try {
             const reply = await nc.request(
                 "devices.list",
                 sc.encode(""),
                 { timeout: 1000 }
             );
-            const { devices } = JSON.parse(sc.decode(reply.data));
-            socket.emit("devices-update", devices);
+            const { uredaji } = JSON.parse(sc.decode(reply.data));
+            socket.emit("devices-update", uredaji);
         } catch (err) {
-            console.log("Could not fetch device list:", err.message);
+            console.log("Nemoguce dohvatiti listu uredaja:", err.message);
         }
 
         socket.on("request-data", (deviceId) => {
-            console.log("Browser requested data from device:", deviceId);
+            console.log("Frontend trazi podatke od uredaja:", deviceId);
             nc.publish(
                 `devices.commands.${deviceId}`,
                 sc.encode(JSON.stringify({ deviceId }))
@@ -67,16 +101,13 @@ async function start() {
         });
 
         socket.on("disconnect", () => {
-            console.log("Browser disconnected:", socket.id);
+            console.log("Frontend odspojen:", socket.id);
         });
     });
 
     server.listen(3000, () => {
-        console.log("Frontend Gateway running on port 3000");
+        console.log("Frontend Gateway pokrenut na portu 3000");
     });
 }
 
-start().catch(err => {
-    console.error("Frontend Gateway failed to start:", err);
-    process.exit(1);
-});
+start()

@@ -3,6 +3,8 @@ import random
 import time
 import threading
 import sys
+import datetime
+import uuid
 
 if len(sys.argv) < 2:
     print("Potreban ID uredjaja!")
@@ -14,25 +16,27 @@ sio = socketio.Client()
 
 @sio.event
 def connect():
-    print("Connected to server")
+    print("Povezivanje uspjelo")
     sio.emit("register", DEVICE_ID)
 
 @sio.on("send-data-now")
 def on_command():
-    print("Server requested immediate send")
+    print("Zahtjev za podacima stigao")
     send_data()
 
 def send_data():
-    payload = {
-        "id": DEVICE_ID,
-        "podaci": random.randint(1, 100)
+    podaci = {
+        "uredjaj_id": DEVICE_ID,
+        "podatak_id": str(uuid.uuid4()),
+        "podatak": random.randint(1, 100),
+        "vrijeme": datetime.datetime.now(datetime.timezone.utc).isoformat()
     }
-    print("Sending:", payload)
-    sio.emit("device-data", payload)
+    print("Sending:", podaci)
+    sio.emit("device-data", podaci)
 
 def periodic():
     while True:
-        time.sleep(60)
+        time.sleep(5)
         send_data()
 
 sio.connect("http://localhost:3001")
