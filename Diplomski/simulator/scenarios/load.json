@@ -1,0 +1,15 @@
+[{
+    "profile": "./profiles/normal.json",
+    "duration": 50,
+    "order": 1
+},
+{
+    "profile": "./profiles/interactive.json",
+    "duration": 50,
+    "order": 2
+},
+{
+    "profile": "./profiles/gamification_burst.json",
+    "duration": 20,
+    "order": 3
+}]

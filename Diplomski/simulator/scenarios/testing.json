@@ -1,0 +1,10 @@
+[{
+    "profile": "./profiles/idle.json",
+    "duration": 3,
+    "order": 1
+},
+{
+    "profile": "./profiles/normal.json",
+    "duration": 5,
+    "order": 2
+}]
