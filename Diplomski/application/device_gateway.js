@@ -18,6 +18,14 @@ async function handlerKomandi(cmdSub, io) {
     }
 }
 
+async function handlerPrekida(interruptionSub, io) {
+    for await (const poruka of interruptionSub) {
+        const { deviceId } = JSON.parse(sc.decode(poruka.data));
+        console.log("Saljem prekid uredaju ", deviceId);
+        io.to(deviceId).emit("interruption");
+    }
+}
+
 async function handlerListeUredaja(listSub, io) {
     for await (const poruka of listSub) {
         poruka.respond(sc.encode(JSON.stringify({uredaji: Array.from(uredaji.keys())})));
@@ -32,11 +40,16 @@ async function start() {
 
     handlerKomandi(cmdSub, io);
 
+    const interruptionSub = nc.subscribe("devices.interruptions.>");
+
+    handlerPrekida(interruptionSub, io);
+
 
     const listSub = nc.subscribe("devices.list");
 
     handlerListeUredaja(listSub, io);
 
+    
     io.on("connection", (socket) => {
         console.log("Uredaj spojen:", socket.id);
 
@@ -69,6 +82,7 @@ async function start() {
             }
         });
     });
+    
 
     server.listen(3001, () => {
         console.log("Device Gateway pokrenut na portu 3001");

@@ -29,20 +29,31 @@ function requestDevice(id) {
     socket.emit("request-data", String(id));
 }
 
+function interruptDevice(id) {
+    socket.emit("interrupt_device", String(id));
+}
+
 socket.on("devices-update", (devices) => {
     const container = document.getElementById('device-buttons');
+    const container_interrupt = document.getElementById("device_interrupt")
     container.innerHTML = '';
+    container_interrupt.innerHTML = ""
 
     if (devices.length === 0) {
         container.innerHTML = '<span class="no-data">Nema uređaja</span>';
+        container_interrupt.innerHTML = '<span class="no-data">Nema uređaja</span>';
         return;
     }
 
     devices.forEach(id => {
         const btn = document.createElement('button');
+        const btn_interrupt = document.createElement("button");
         btn.textContent = `Zatraži podatke od uređaja ${id}`;
         btn.onclick = () => requestDevice(id);
+        btn_interrupt.textContent = `Prekini vezu uređaju ${id} na 10 do 30 sekundi`;
+        btn_interrupt.onclick = () => interruptDevice(id)
         container.appendChild(btn);
+        container_interrupt.appendChild(btn_interrupt);
     });
 });
 

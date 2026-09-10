@@ -24,4 +24,17 @@ def generate_data(profile, scenario_file, device_id):
     }
     return event
 
+def generate_data_req(device_id):
+    event = {
+        "event_id": str(uuid.uuid4()),
+        "device_id": device_id,
+        "event_type": "REQUESTED_EVENT",
+        "profile": "No profile",
+        "scenario": "No scenario",
+        "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "value": random.randint(1, 100)
+    }
+    return event
+
+
 #generate_data()

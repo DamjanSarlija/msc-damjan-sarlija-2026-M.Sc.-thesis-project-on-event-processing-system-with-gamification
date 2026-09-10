@@ -100,6 +100,14 @@ async function start() {
             );
         });
 
+        socket.on("interrupt_device", (deviceId) => {
+            console.log("Frontend trazi prekid veze uredaja:", deviceId);
+            nc.publish(
+                `devices.interruptions.${deviceId}`,
+                sc.encode(JSON.stringify({ deviceId }))
+            );
+        })
+
         socket.on("disconnect", () => {
             console.log("Frontend odspojen:", socket.id);
         });
