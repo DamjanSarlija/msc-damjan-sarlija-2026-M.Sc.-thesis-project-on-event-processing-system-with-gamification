@@ -65,9 +65,28 @@ async function start() {
             })));
         });
 
+        /*
         socket.on("device_data", (data) => {
             console.log("Podaci primljeni s uredaja", data);
             nc.publish(`devices.data.${data.device_id}`, sc.encode(JSON.stringify(data)));
+        });
+        */
+
+        socket.on("device_data", async (data, acknowledge) => {
+            console.log("Podaci primljeni s uredaja", data);
+
+            try {
+                const response = await nc.request(`devices.data.${data.device_id}`, sc.encode(JSON.stringify(data)), {timeout: 5000});
+                const response_parsed = JSON.parse(sc.decode(response.data));
+                acknowledge(response_parsed);
+            } catch(error) {
+                console.error("Greska pri pohrani u bazu!");
+                acknowledge({
+                    success: false,
+                    event_id: data.event_id
+                });
+            }
+            
         });
 
         socket.on("disconnect", () => {

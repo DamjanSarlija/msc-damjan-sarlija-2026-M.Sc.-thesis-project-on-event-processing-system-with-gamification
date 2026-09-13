@@ -36,5 +36,3 @@ def generate_data_req(device_id):
     }
     return event
 
-
-#generate_data()

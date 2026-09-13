@@ -30,11 +30,25 @@ async function handlerPodataka(dataSub, nc) {
         const podaci = JSON.parse(sc.decode(poruka.data));
         console.log("Pohranjujem podatke: ", podaci);
 
-        const res = await pool.query("INSERT INTO podaci (event_id, device_id, event_type, profile, scenario, generated_at, value) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *", [podaci.event_id, String(podaci.device_id), podaci.event_type, podaci.profile, podaci.scenario, podaci.generated_at, podaci.value]);
-        //deviceDataStore.push({ ...podaci, vrijeme: new Date() });
-        const noviRedak = res.rows[0];
-        nc.publish("database.data", sc.encode(JSON.stringify(noviRedak)));
-        console.log("Šaljem pohranjene podatke", noviRedak);
+        try{
+            const res = await pool.query("INSERT INTO podaci (event_id, device_id, event_type, profile, scenario, generated_at, value) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (event_id) DO NOTHING RETURNING *", [podaci.event_id, String(podaci.device_id), podaci.event_type, podaci.profile, podaci.scenario, podaci.generated_at, podaci.value]);
+            if (res.rows.length > 0) {
+                const noviRedak = res.rows[0];
+                nc.publish("database.data", sc.encode(JSON.stringify(noviRedak)));
+                console.log("Šaljem pohranjene podatke", noviRedak);
+            } else {
+                console.log("Event already exists in a database: ", podaci.event_id);
+            }
+            //deviceDataStore.push({ ...podaci, vrijeme: new Date() });
+
+
+            poruka.respond(sc.encode(JSON.stringify({success: true, event_id: podaci.event_id})));
+        } catch (error){
+            console.error("Greska pri pohrani podataka u bazu!");
+            poruka.respond(sc.encode(JSON.stringify({success: false, event_id: podaci.event_id})))
+        }
+
+
         
     }
 }
