@@ -4,6 +4,17 @@ let stariPodaciUcitani = false;
 let buffer = [];
 let prikazaniIdevi = new Set();
 
+function prikaziGamifikaciju(item) {
+    if (!item.game) {
+        return
+    }
+
+    const gamification_div = document.getElementById(`gamification_session_${item.device_id}`);
+    gamification_div.innerHTML = `<p>session_id: ${item.game["session_id"]}</p><p>score: ${item.game["score"]}</p><p>total_events: ${item.game["total_events"]}</p><p>correct_events: ${item.game["correct_events"]}</p><p>session_start: ${item.game["session_start"]}</p><p>success: ${item.game["success"]}</p>`
+
+
+}
+
 function prikaziPodatak(item, baza = false) {
     if (prikazaniIdevi.has(item.event_id)) {
         return;
@@ -22,6 +33,13 @@ function prikaziPodatak(item, baza = false) {
         }
 
         list.prepend(li);
+        
+        if (!baza) {
+            const gamification_div = document.getElementById(`gamification_session_${item.device_id}`);
+            gamification_div.innerHTML = `<p>session_id: ${item.game["session_id"]}</p><p>score: ${item.game["score"]}</p><p>total_events: ${item.game["total_events"]}</p><p>correct_events: ${item.game["correct_events"]}</p><p>session_start: ${item.game["session_start"]}</p><p>success: ${item.game["success"]}</p>`
+        }
+            
+
     }
 } 
 
@@ -36,28 +54,35 @@ function interruptDevice(id) {
 socket.on("devices-update", (devices) => {
     const container = document.getElementById('device-buttons');
     const container_interrupt = document.getElementById("device_interrupt")
+    const container_gamification = document.getElementById("container_gamification")
     container.innerHTML = '';
-    container_interrupt.innerHTML = ""
+    container_interrupt.innerHTML = "";
+    container_gamification.innerHTML = "";
 
     if (devices.length === 0) {
         container.innerHTML = '<span class="no-data">Nema uređaja</span>';
         container_interrupt.innerHTML = '<span class="no-data">Nema uređaja</span>';
+        container_gamification.innerHTML = '<span class="no-data">Nema uređaja</span>';
         return;
     }
 
     devices.forEach(id => {
         const btn = document.createElement('button');
         const btn_interrupt = document.createElement("button");
+        const gamification_div = document.createElement("div");
+        gamification_div.id = `gamification_session_${id}`
         btn.textContent = `Zatraži podatke od uređaja ${id}`;
         btn.onclick = () => requestDevice(id);
         btn_interrupt.textContent = `Prekini vezu uređaju ${id} na 10 do 30 sekundi`;
         btn_interrupt.onclick = () => interruptDevice(id)
         container.appendChild(btn);
         container_interrupt.appendChild(btn_interrupt);
+        container_gamification.appendChild(gamification_div)
     });
 });
 
 socket.on("new-data", (item) => {
+    prikaziGamifikaciju(item);
     if (stariPodaciUcitani) {
         prikaziPodatak(item, false);
     } else {
@@ -87,11 +112,6 @@ async function fetchData() {
         list.innerHTML = '';
 
         data.slice().forEach(item => {
-            /*
-            const li = document.createElement('li');
-            const time = new Date(item.vrijeme).toLocaleTimeString();
-            li.textContent = `Uređaj ${item.uredjaj_id}: ${item.podatak} — ${time}`;
-            list.appendChild(li); */
             prikaziPodatak(item, true);
         });
         stariPodaciUcitani = true;

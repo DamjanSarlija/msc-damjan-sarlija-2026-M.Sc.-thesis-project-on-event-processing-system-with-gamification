@@ -1,0 +1,15 @@
+[{
+    "profile": "./profiles/normal.json",
+    "duration": 60,
+    "order": 1
+},
+{
+    "profile": "./profiles/burst.json",
+    "duration": 10,
+    "order": 2
+},
+{
+    "profile": "./profiles/normal2.json",
+    "duration": 60,
+    "order": 3
+}]

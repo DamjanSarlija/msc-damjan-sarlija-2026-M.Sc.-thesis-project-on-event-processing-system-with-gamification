@@ -20,7 +20,8 @@ def generate_data(profile, scenario_file, device_id):
         "profile": profile,
         "scenario": scenario_file,
         "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "value": random.randint(1, 100)
+        "value": random.randint(1, 100),
+        "game": {}
     }
     return event
 

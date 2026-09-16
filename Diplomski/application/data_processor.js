@@ -11,16 +11,21 @@ const deviceDataStore = [];
 
 const app = express();
 
+/*
 const pool = new pg.Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
         rejectUnauthorized: false
     }
+}); */
+
+const pool = new pg.Pool({
+    connectionString: process.env.DATABASE_URL
 });
 
 app.get("/api/data", async (req, res) => {
 
-    const result = await pool.query("SELECT * FROM podaci ORDER BY vrijeme DESC");
+    const result = await pool.query("SELECT * FROM podaci ORDER BY saved_at DESC");
     res.json(result.rows);
     //res.json(deviceDataStore);
 });

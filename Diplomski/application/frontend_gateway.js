@@ -8,10 +8,7 @@ const de = require("dotenv");
 de.config();
 
 const pool = new pg.Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
+    connectionString: process.env.DATABASE_URL
 });
 
 

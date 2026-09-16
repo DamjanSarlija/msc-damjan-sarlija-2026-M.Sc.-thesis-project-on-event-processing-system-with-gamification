@@ -7,8 +7,9 @@ import datetime
 import uuid
 import event_generator
 import json
+import gamification
 
-
+file_lock = threading.Lock()
 
 def send_event(event, sio, is_resend, buffer, buffer_lock):
 
@@ -28,7 +29,6 @@ def send_event(event, sio, is_resend, buffer, buffer_lock):
         try:
             sio.emit("device_data", event, callback = acknowledge_callback)
         except Exception as e:
-            
             print(f"Failed to send event: {e}")
 
     else:
@@ -45,6 +45,7 @@ def simulate(scenario_file, device_id):
     sio = socketio.Client()
     buffer = {}
     buffer_lock = threading.Lock()
+    gamification.assign_session_id(device_id)
 
     @sio.event
     def connect():
@@ -62,7 +63,7 @@ def simulate(scenario_file, device_id):
     def interrupt():
         sio.disconnect()
         time.sleep(0.1)
-        time.sleep(random.randint(10, 30))
+        time.sleep(random.randint(60, 120))
         sio.connect("http://localhost:3001")
         print(f"Device {device_id} reconnected.")
 
@@ -89,14 +90,19 @@ def simulate(scenario_file, device_id):
                 time_elapsed = time.monotonic() - start
                 if time_elapsed >= duration:
                     break
-
                 event = event_generator.generate_data(profile, scenario_file, device_id)
+                event = gamification.gamify_event(event)
                 send_event(event, sio, False, buffer, buffer_lock)
                 time_remaining = duration - time.monotonic() + start
                 if time_remaining <= 0:
                     break
 
                 time.sleep(min(time_remaining, random.uniform(1 / max_frequency, 1 / min_frequency)))
+
+            
+                
+                    
+
 
     def resend_loop():
         while True:
