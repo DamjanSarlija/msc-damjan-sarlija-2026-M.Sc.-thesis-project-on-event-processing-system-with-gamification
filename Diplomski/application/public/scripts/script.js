@@ -5,14 +5,8 @@ let buffer = [];
 let prikazaniIdevi = new Set();
 
 function prikaziGamifikaciju(item) {
-    if (!item.game) {
-        return
-    }
-
     const gamification_div = document.getElementById(`gamification_session_${item.device_id}`);
-    gamification_div.innerHTML = `<p>session_id: ${item.game["session_id"]}</p><p>score: ${item.game["score"]}</p><p>total_events: ${item.game["total_events"]}</p><p>correct_events: ${item.game["correct_events"]}</p><p>session_start: ${item.game["session_start"]}</p><p>success: ${item.game["success"]}</p>`
-
-
+    gamification_div.innerHTML = `<p>exercise_id: ${item.exercise_id}</p><p>attempt: ${item.attempt}</p><p>phase: ${item.phase}</p><p>target_level: ${item.target_level}</p><p>reference_value: ${item.reference_value}</p><p>classification: ${item.classification}</p><p>success: ${item.success}</p><p>total_attempts: ${item.total_attempts}</p><p>successful_attempts: ${item.successful_attempts}</p><p>score: ${item.score}</p><p>status: ${item.status}</p>`
 }
 
 function prikaziPodatak(item, baza = false) {
@@ -36,7 +30,7 @@ function prikaziPodatak(item, baza = false) {
         
         if (!baza) {
             const gamification_div = document.getElementById(`gamification_session_${item.device_id}`);
-            gamification_div.innerHTML = `<p>session_id: ${item.game["session_id"]}</p><p>score: ${item.game["score"]}</p><p>total_events: ${item.game["total_events"]}</p><p>correct_events: ${item.game["correct_events"]}</p><p>session_start: ${item.game["session_start"]}</p><p>success: ${item.game["success"]}</p>`
+            gamification_div.innerHTML = `<p>exercise_id: ${item.exercise_id}</p><p>attempt: ${item.attempt}</p><p>phase: ${item.phase}</p><p>target_level: ${item.target_level}</p><p>reference_value: ${item.reference_value}</p><p>classification: ${item.classification}</p><p>success: ${item.success}</p><p>total_attempts: ${item.total_attempts}</p><p>successful_attempts: ${item.successful_attempts}</p><p>score: ${item.score}</p><p>status: ${item.status}</p>`
         }
             
 
